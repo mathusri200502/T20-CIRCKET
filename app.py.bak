@@ -1,0 +1,446 @@
+from flask import Flask, jsonify, render_template, send_from_directory, request, redirect, url_for
+import re
+import json
+import os
+from collections import defaultdict
+
+# Initialize Flask app
+app = Flask(__name__, static_folder='static', template_folder='templates')
+DATA_DIR = 'data'
+
+def search_data(query):
+    # Load all data
+    batting_data = load_json('t20_wc_batting_summary.json')
+    bowling_data = load_json('t20_wc_bowling_summary.json')
+    player_info = load_json('t20_wc_player_info.json')
+    
+    # Aggregate data
+    batting_agg = aggregate_batting(batting_data)
+    bowling_agg = aggregate_bowling(bowling_data)
+    
+    results = {
+        'players': [],
+        'teams': set(),
+        'categories': []
+    }
+    
+    query = query.lower()
+    
+    # Search players
+    for player in player_info:
+        if query in player.get('name', '').lower():
+            results['players'].append(player)
+            results['teams'].add(player.get('team', ''))
+    
+    # Search categories
+    categories = ['power', 'anchor', 'finisher', 'allrounder', 'fast']
+    for category in categories:
+        if query in category:
+            results['categories'].append(category)
+    
+    # Search teams
+    for player in player_info:
+        team = player.get('team', '').lower()
+        if query in team:
+            results['teams'].add(player.get('team', ''))
+    
+    return results
+
+def load_json(fname):
+    with open(os.path.join(DATA_DIR, fname), 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+def aggregate_batting(batting_json):
+    # batting_json structure: list of { "battingSummary": [ ... ] }
+    agg = defaultdict(lambda: {'runs':0, 'balls':0, '4s':0, '6s':0, 'innings':0, 'positions':[], 'name':None, 'team':None})
+    for block in batting_json:
+        for r in block.get('battingSummary', []):
+            name = r.get('batsmanName','').strip()
+            if not name: 
+                continue
+            # convert values; handle '-' for SR etc
+            runs = int(r.get('runs','0')) if r.get('runs','0').isdigit() else 0
+            balls = int(r.get('balls','0')) if str(r.get('balls','0')).isdigit() else 0
+            _4s = int(r.get('4s','0')) if str(r.get('4s','0')).isdigit() else 0
+            _6s = int(r.get('6s','0')) if str(r.get('6s','0')).isdigit() else 0
+            pos = r.get('battingPos', None)
+            teamInnings = r.get('teamInnings','')
+            agg[name]['name'] = name
+            agg[name]['team'] = teamInnings or agg[name].get('team')
+            agg[name]['runs'] += runs
+            agg[name]['balls'] += balls
+            agg[name]['4s'] += _4s
+            agg[name]['6s'] += _6s
+            if balls > 0 or runs>0:
+                agg[name]['innings'] += 1
+            if pos is not None:
+                try:
+                    agg[name]['positions'].append(int(pos))
+                except:
+                    pass
+    # compute derived
+    for p,d in agg.items():
+        d['strike_rate'] = round((d['runs']/d['balls']*100) if d['balls']>0 else 0,2)
+        d['bat_avg'] = round((d['runs']/d['innings']) if d['innings']>0 else 0,2)
+        # boundary %
+        total_boundaries = d['4s'] + d['6s']
+        d['boundary_pct'] = round((total_boundaries* (4) / d['runs'] * 100) if d['runs']>0 else 0,2) if d['runs']>0 else 0.0
+        d['avg_ball_faced'] = round((d['balls']/d['innings']) if d['innings']>0 else 0,2)
+        d['batting_position'] = min(d['positions']) if d['positions'] else None
+    return agg
+
+def aggregate_bowling(bowling_json):
+    agg = defaultdict(lambda: {'runs_conceded':0, 'wickets':0, 'balls':0, 'maiden':0, 'overs':0.0, 'dot_balls':0, 'name':None, 'team':None})
+    # Note: input has 'overs' as string like "3.3" or "4". we'll parse to balls.
+    def overs_to_balls(overs_str):
+        try:
+            if '.' in overs_str:
+                o,s = overs_str.split('.')
+                return int(o)*6 + int(s)
+            return int(float(overs_str))*6
+        except:
+            return 0
+    for block in bowling_json:
+        for r in block.get('bowlingSummary', []):
+            name = r.get('bowlerName','').strip()
+            if not name:
+                continue
+            runs = int(r.get('runs','0')) if str(r.get('runs','0')).isdigit() else 0
+            wickets = int(r.get('wickets','0')) if str(r.get('wickets','0')).isdigit() else 0
+            overs_str = r.get('overs','0')
+            balls = overs_to_balls(overs_str)
+            maiden = int(r.get('maiden','0')) if str(r.get('maiden','0')).isdigit() else 0
+            zeros = int(r.get('0s','0')) if str(r.get('0s','0')).isdigit() else 0
+            team = r.get('bowlingTeam','')
+            agg[name]['name'] = name
+            agg[name]['team'] = team or agg[name].get('team')
+            agg[name]['runs_conceded'] += runs
+            agg[name]['wickets'] += wickets
+            agg[name]['balls'] += balls
+            agg[name]['maiden'] += maiden
+            agg[name]['dot_balls'] += zeros
+            # count an innings when the bowler delivered at least one ball
+            if balls > 0:
+                agg[name]['innings'] = agg[name].get('innings', 0) + 1
+    for p,d in agg.items():
+        d['overs'] = round(d['balls']/6,2) if d['balls']>0 else 0
+        d['economy'] = round((d['runs_conceded']/d['overs']) if d['overs']>0 else 0,2)
+        d['bowling_sr'] = round((d['balls']/d['wickets']) if d['wickets']>0 else 999.0,2)
+        d['bowling_avg'] = round((d['runs_conceded']/d['wickets']) if d['wickets']>0 else 999.0,2)
+        d['dot_pct'] = round((d['dot_balls']/d['balls']*100) if d['balls']>0 else 0,2)
+    return agg
+
+def merge_player_info(player_info_json, batting_agg, bowling_agg):
+    players = {}
+    for p in player_info_json:
+        name = p.get('name','').strip()
+        players[name] = {
+            'name': name,
+            'team': p.get('team',''),
+            'battingStyle': p.get('battingStyle',''),
+            'bowlingStyle': p.get('bowlingStyle',''),
+            'playingRole': p.get('playingRole',''),
+            'description': p.get('description',''),
+            # default metrics (merge)
+            'runs': 0, 'balls':0, '4s':0, '6s':0, 'innings':0,
+            'strike_rate':0, 'bat_avg':0, 'boundary_pct':0, 'avg_ball_faced':0, 'batting_position': None,
+            'runs_conceded':0, 'wickets':0, 'economy':None, 'bowling_sr':None, 'bowling_avg':None, 'dot_pct':None
+        }
+    # include players that appear only in batting/bowling
+    for name, d in batting_agg.items():
+        if name not in players:
+            players[name] = {'name':name, 'team':d.get('team',''), 'battingStyle':'', 'bowlingStyle':'', 'playingRole':'', 'description':'',
+                             'runs':0,'balls':0,'4s':0,'6s':0,'innings':0,'strike_rate':0,'bat_avg':0,'boundary_pct':0,'avg_ball_faced':0,'batting_position':None,
+                             'runs_conceded':0,'wickets':0,'economy':None,'bowling_sr':None,'bowling_avg':None,'dot_pct':None}
+        players[name].update({
+            'runs': d.get('runs',0),
+            'balls': d.get('balls',0),
+            '4s': d.get('4s',0),
+            '6s': d.get('6s',0),
+            'innings': d.get('innings',0),
+            'strike_rate': d.get('strike_rate',0),
+            'bat_avg': d.get('bat_avg',0),
+            'boundary_pct': d.get('boundary_pct',0),
+            'avg_ball_faced': d.get('avg_ball_faced',0),
+            'batting_position': d.get('batting_position', None)
+        })
+    for name, d in bowling_agg.items():
+        if name not in players:
+            players[name] = {'name':name, 'team':d.get('team',''), 'battingStyle':'', 'bowlingStyle':'', 'playingRole':'', 'description':'',
+                             'runs':0,'balls':0,'4s':0,'6s':0,'innings':0,'strike_rate':0,'bat_avg':0,'boundary_pct':0,'avg_ball_faced':0,'batting_position':None,
+                             'runs_conceded':0,'wickets':0,'economy':None,'bowling_sr':None,'bowling_avg':None,'dot_pct':None}
+        players[name].update({
+            'runs_conceded': d.get('runs_conceded',0),
+            'wickets': d.get('wickets',0),
+            'economy': d.get('economy', None),
+            'bowling_sr': d.get('bowling_sr', None),
+            'bowling_avg': d.get('bowling_avg', None),
+            'dot_pct': d.get('dot_pct', None),
+            'balls_bowled': d.get('balls',0),
+            'innings_bowled': d.get('innings',0),
+            'overs': d.get('overs',0),
+            'maiden': d.get('maiden',0)
+        })
+    return players
+
+# category filter functions (per your thresholds)
+def is_power_hitter(p):
+    return (p.get('bat_avg',0) > 30 and p.get('strike_rate',0) > 140 and p.get('innings',0) > 3 and p.get('boundary_pct',0) > 50.0 and (p.get('batting_position') is not None and p.get('batting_position') <= 3))
+
+def is_anchor(p):
+    return (p.get('bat_avg',0) > 40 and p.get('strike_rate',0) > 125 and p.get('innings',0) > 3 and p.get('avg_ball_faced',0) > 20 and (p.get('batting_position') is not None and p.get('batting_position') > 2))
+
+def is_finisher(p):
+    return (p.get('bat_avg',0) > 25 and p.get('strike_rate',0) > 130 and p.get('innings',0) > 3 and p.get('avg_ball_faced',0) > 12 and (p.get('batting_position') is not None and p.get('batting_position') > 4) and p.get('innings',0) > 1)  # "inns bowled > 1" ambiguous; using innings>1
+
+def is_allrounder(p):
+    econ = p.get('economy')
+    return (p.get('bat_avg',0) > 15 and p.get('strike_rate',0) > 140 and p.get('innings',0) > 2 and (p.get('batting_position') is not None and p.get('batting_position') > 4) and p.get('innings',0) > 2 and (econ is not None and econ < 7) and (p.get('bowling_sr') is not None and p.get('bowling_sr') < 20.0))
+
+def is_specialist_fast(p):
+    # Specialist fast-bowler criteria (bowling-specific fields):
+    # - innings bowled > 4
+    # - economy present and < 7.0
+    # - bowling strike rate present and < 16.0
+    # - bowlingStyle contains 'fast'
+    # - bowling average present and < 20
+    # - dot_pct > 40.0
+    econ = p.get('economy')
+    bs = (p.get('bowlingStyle') or '').lower()
+    return (
+        (p.get('innings_bowled', 0) > 4)
+        and (econ is not None and econ != '' and float(econ) < 7.0)
+        and (p.get('bowling_sr') is not None and p.get('bowling_sr') < 16.0)
+        and ('fast' in bs)
+        and (p.get('bowling_avg') is not None and p.get('bowling_avg') < 20)
+        and (p.get('dot_pct', 0) > 40.0)
+    )
+
+CATEGORY_FUNCS = {
+    'power': is_power_hitter,
+    'anchor': is_anchor,
+    'finisher': is_finisher,
+    'allrounder': is_allrounder,
+    'fast': is_specialist_fast
+}
+
+app = Flask(__name__, static_folder='static', template_folder='templates')
+
+# load and aggregate once
+batting_json = load_json('t20_wc_batting_summary.json')
+bowling_json = load_json('t20_wc_bowling_summary.json')
+player_info_json = load_json('t20_wc_player_info.json')
+
+bat_agg = aggregate_batting(batting_json)
+bowl_agg = aggregate_bowling(bowling_json)
+players = merge_player_info(player_info_json, bat_agg, bowl_agg)
+
+# Routes
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/search')
+def search():
+    query = request.args.get('q', '').strip()
+    if not query:
+        return redirect('/')
+    
+    try:
+        results = search_data(query)
+        return render_template('search.html', 
+                             query=query,
+                             players=results['players'],
+                             teams=list(results['teams']),
+                             categories=results['categories'])
+    except Exception as e:
+        print(f"Error during search: {str(e)}")
+        return f"An error occurred: {str(e)}", 500
+
+@app.route('/category/<cat>')
+def category(cat):
+    return render_template('category.html', category=cat)
+
+@app.route('/best11')
+def best11():
+    return render_template('best11.html')
+
+@app.route('/team/<team>')
+def team(team):
+    team_players = [p for p in players.values() if p.get('team','').lower() == team.lower()]
+    role_order = {'Batter': 1, 'Opening Batter': 1, 'Top Order Batter': 1,
+                  'Allrounder': 2, 'Bowling Allrounder': 2,
+                  'Bowler': 3, 'Opening Bowler': 3}
+    team_players.sort(key=lambda p: (role_order.get(p.get('playingRole', ''), 4), p.get('name', '')))
+    for p in team_players:
+        name = (p.get('name') or '')
+        img_name = re.sub(r'[^a-z0-9]+', '_', name.lower()).strip('_')
+        p['img_name'] = img_name
+    return render_template('team.html', team=team, team_players=team_players)
+
+@app.route('/static/<path:path>')
+def send_static(path):
+    return send_from_directory('static', path)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/category/<cat>')
+def category_page(cat):
+    return render_template('category.html', category=cat)
+
+@app.route('/best11')
+def best11_page():
+    return render_template('best11.html')
+
+@app.route('/team/<team>')
+def team_page(team):
+    # prepare team players for server-side rendering to avoid client-side JS issues
+    team_players = [p for p in players.values() if p.get('team','').lower() == team.lower()]
+    # sort similarly to API
+    role_order = {'Batter': 1, 'Opening Batter': 1, 'Top Order Batter': 1,
+                  'Allrounder': 2, 'Bowling Allrounder': 2,
+                  'Bowler': 3, 'Opening Bowler': 3}
+    team_players.sort(key=lambda p: (role_order.get(p.get('playingRole', ''), 4), p.get('name', '')))
+    # add sanitized image filename for each player (matches static image naming)
+    for p in team_players:
+        name = (p.get('name') or '')
+        img_name = re.sub(r'[^a-z0-9]+', '_', name.lower()).strip('_')
+        p['img_name'] = img_name
+    return render_template('team.html', team=team, team_players=team_players)
+
+@app.route('/static/<path:path>')
+def serve_static(path):
+    return send_from_directory('static', path)
+
+@app.route('/api/teams')
+def api_teams():
+    """Get list of all teams"""
+    teams = set(p.get('team', '') for p in players.values())
+    return jsonify(sorted(list(teams)))
+
+@app.route('/api/team/<team>')
+def api_team(team):
+    """Get all players for a specific team with their stats"""
+    team_players = [p for p in players.values() if p.get('team', '').lower() == team.lower()]
+    # Sort by role: Batters first, then all-rounders, then bowlers
+    role_order = {'Batter': 1, 'Opening Batter': 1, 'Top Order Batter': 1,
+                  'Allrounder': 2, 'Bowling Allrounder': 2,
+                  'Bowler': 3, 'Opening Bowler': 3}
+    team_players.sort(key=lambda p: (role_order.get(p.get('playingRole', ''), 4), p.get('name', '')))
+    return jsonify(team_players)
+
+@app.route('/api/players')
+def api_players():
+    return jsonify(list(players.values()))
+
+
+@app.route('/api/log', methods=['POST'])
+def api_log():
+    # receive client-side error reports (JSON)
+    try:
+        data = json.loads(request.data.decode('utf-8')) if request.data else {}
+    except Exception:
+        data = {}
+    os.makedirs('logs', exist_ok=True)
+    with open(os.path.join('logs','client_errors.log'), 'a', encoding='utf-8') as f:
+        f.write(json.dumps(data, ensure_ascii=False) + "\n")
+    return ('', 204)
+
+@app.route('/api/category/<cat>')
+def api_category(cat):
+    func = CATEGORY_FUNCS.get(cat)
+    if not func:
+        return jsonify({'error':'unknown category'}), 400
+    matched = [p for p in players.values() if func(p)]
+    # If the 'fast' specialist filter is too strict and returns nothing,
+    # fall back to a broader, more user-friendly selection.
+    if cat == 'fast' and not matched:
+        matched = [p for p in players.values() if ('fast' in (p.get('bowlingStyle') or '').lower() or 'pace' in (p.get('bowlingStyle') or '').lower()) and (p.get('wickets',0) > 2 or (p.get('economy') is not None and p.get('economy') < 9))]
+    # sort by relevant metric for each category
+    if cat == 'power':
+        matched.sort(key=lambda x: x.get('runs',0), reverse=True)
+    elif cat == 'anchor':
+        matched.sort(key=lambda x: x.get('bat_avg',0), reverse=True)
+    elif cat == 'finisher':
+        matched.sort(key=lambda x: x.get('strike_rate',0), reverse=True)
+    elif cat == 'allrounder':
+        matched.sort(key=lambda x: (x.get('wickets',0)+x.get('runs',0)/10), reverse=True)
+    elif cat == 'fast':
+        matched.sort(key=lambda x: x.get('wickets',0), reverse=True)
+    return jsonify(matched)
+
+@app.route('/api/best11')
+def api_best11():
+    # selection plan:
+    # power hitters: top 3
+    # anchors: top 2
+    # finishers: top 2
+    # allrounder: top 2
+    # fast bowlers: top 2
+    picks = []
+    def pick(cat, n):
+        resp = api_category(cat).get_json()
+        if isinstance(resp, dict) and resp.get('error'):
+            return []
+        return resp[:n]
+    picks += pick('power',3)
+    picks += pick('anchor',2)
+    picks += pick('finisher',2)
+    picks += pick('allrounder',2)
+    picks += pick('fast',2)
+    # If duplicates / >11, dedupe by name and trim to 11
+    seen = set()
+    uniq = []
+    for p in picks:
+        if p['name'] not in seen:
+            seen.add(p['name'])
+            uniq.append(p)
+        if len(uniq) >= 11:
+            break
+
+    return jsonify(uniq)
+
+
+
+# Route for home page
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+# Static file handlers
+@app.route('/static/<path:path>')
+def send_static(path):
+    return send_from_directory('static', path)
+
+@app.route('/search')
+def search():
+    print("Search endpoint hit")  # Debug log
+    query = request.args.get('q', '').strip()
+    print(f"Search query: {query}")  # Debug log
+    
+    if not query:
+        print("No query provided, redirecting to home")  # Debug log
+        return redirect('/')
+    
+    try:
+        results = search_data(query)
+        print(f"Search results: {results}")  # Debug log
+        
+        return render_template('search.html', 
+                             query=query,
+                             players=results['players'],
+                             teams=list(results['teams']),
+                             categories=results['categories'])
+    except Exception as e:
+        print(f"Error during search: {str(e)}")  # Debug log
+        return f"An error occurred: {str(e)}", 500
+
+if __name__ == "__main__":
+    print("Starting Flask server...")
+    try:
+        # bind to all interfaces to be reachable from localhost and LAN
+        app.run(host='0.0.0.0', port=5000, debug=True)
+    except Exception as e:
+        print(f"Error starting server: {str(e)}")
