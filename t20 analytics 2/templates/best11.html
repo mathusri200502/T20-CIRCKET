@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="category-header">
+  <h2>🏆 Best 11 Players of T20 World Cup 2022</h2>
+  <p>Top performers across all categories — power hitters, anchors, finishers, allrounders, and fast bowlers.</p>
+</section>
+
+<section class="players-grid" id="best11-grid">
+  <!-- Player cards will be injected here -->
+</section>
+
+<section class="charts">
+  <h3>Performance Overview</h3>
+  <canvas id="chartRuns" width="600" height="260" style="margin-bottom:24px;"></canvas>
+  <canvas id="chartWickets" width="400" height="220" style="margin-bottom:24px;"></canvas>
+  <canvas id="chartScatter" width="400" height="220" style="margin-bottom:24px;"></canvas>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', async ()=>{
+  const res = await fetch('/api/best11');
+  const data = await res.json();
+  const grid = document.getElementById('best11-grid');
+
+  grid.innerHTML = data.map(p=>`
+    <div class="player-card" data-player-name="${p.name}">
+      <img src="/static/images/${p.name.toLowerCase().replace(/[^a-z0-9]+/g,'_')}.jpg" 
+           onerror="this.src='/static/images/placeholder.png'" alt="${p.name}">
+      <h4>${p.name}</h4>
+      <p>${p.team || ''}</p>
+      <p><strong>Bat Avg:</strong> ${p.bat_avg || 0} | <strong>SR:</strong> ${p.strike_rate || 0}</p>
+      <p><strong>Wkts:</strong> ${p.wickets || 0} | <strong>Eco:</strong> ${p.economy || 0}</p>
+    </div>
+  `).join('');
+
+  // Prepare charts
+  const names = data.map(p=>p.name);
+  const runs = data.map(p=>p.runs || 0);
+  const wkts = data.map(p=>p.wickets || 0);
+  const avg = data.map(p=>p.bat_avg || 0);
+  const sr = data.map(p=>p.strike_rate || 0);
+
+  new Chart(document.getElementById('chartRuns'), {
+    type:'bar',
+    data:{labels:names, datasets:[{label:'Runs', data:runs}]},
+    options:{responsive:true, maintainAspectRatio:false}
+  });
+
+  new Chart(document.getElementById('chartWickets'), {
+    type:'bar',
+    data:{labels:names, datasets:[{label:'Wickets', data:wkts}]},
+    options:{responsive:true, maintainAspectRatio:false}
+  });
+
+  new Chart(document.getElementById('chartScatter'), {
+    type:'scatter',
+    data:{datasets:[{label:'Avg vs SR', data:names.map((n,i)=>({x:avg[i],y:sr[i]}))}]},
+    options:{
+      scales:{
+        x:{title:{display:true,text:'Batting Average'}},
+        y:{title:{display:true,text:'Strike Rate'}}
+      },
+      maintainAspectRatio:false
+    }
+  });
+});
+</script>
+
+<style>
+.players-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+.player-card {
+  background: rgba(255,255,255,0.95);
+  color: #111;
+  border-radius: 16px;
+  padding: 12px;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.player-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+}
+.player-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+.charts {
+  margin-top: 40px;
+}
+</style>
+
+{% endblock %}

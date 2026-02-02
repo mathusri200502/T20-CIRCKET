@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="search-results">
+    <h2>Search Results for "{{ query }}"</h2>
+
+        <details style="margin-bottom:1em;">
+            <summary style="font-weight:600;color:#e4007a;">Debug Info</summary>
+            <pre style="background:#f8f8ff;border:1px solid #e4007a22;padding:12px;border-radius:8px;max-width:700px;overflow-x:auto;">
+                Players: {{ players|tojson }}
+                Teams: {{ teams|tojson }}
+                Categories: {{ categories|tojson }}
+            </pre>
+        </details>
+    
+    {% if categories %}
+    <section class="result-section">
+        <h3>Categories</h3>
+        <ul class="category-list">
+            {% for category in categories %}
+            <li><a href="/category/{{ category }}">{{ category|title }} Players</a></li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    {% if teams %}
+    <section class="result-section">
+        <h3>Teams</h3>
+        <ul class="team-list">
+            {% for team in teams %}
+            <li><a href="/team/{{ team }}">{{ team }}</a></li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    {% if players %}
+    <section class="result-section">
+        <h3>Players</h3>
+        <ul class="player-list">
+            {% for player in players %}
+            <li>
+                <a href="/player/{{ player.name }}">{{ player.name }} ({{ player.team }})</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    {% if not categories and not teams and not players %}
+    <p class="no-results">No results found for "{{ query }}"</p>
+    {% endif %}
+</div>
+{% endblock %}

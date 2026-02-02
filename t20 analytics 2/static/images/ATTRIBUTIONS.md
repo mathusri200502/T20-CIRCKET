@@ -1,0 +1,41 @@
+# Image Attributions
+
+The following images were downloaded from Wikimedia/Wikipedia. Please review individual licenses before reuse (see `scripts/image_license_metadata.csv`).
+
+- **Mitchell Starc** — `mitchell_starc.jpg`
+  - Source: https://upload.wikimedia.org/wikipedia/commons/3/38/Mitchell_Starc_2023.jpg
+  - License: CC BY 3.0 https://creativecommons.org/licenses/by/3.0
+  - Artist/Credit: <a rel="nofollow" class="external text" href="https://www.youtube.com/@primevideoaunz">Prime Video AU &amp; NZ</a>
+
+- **Ashton Agar** — `ashton_agar.jpg`
+  - Source: https://upload.wikimedia.org/wikipedia/commons/8/8a/2018.02.03.20.31.23-AUSvNZL_T20_NZL_innings%2C_SCG-0002_%2838618210190%29_%28Agar_cropped%29.jpg
+  - License: CC BY 2.0 https://creativecommons.org/licenses/by/2.0
+  - Artist/Credit: <a rel="nofollow" class="external text" href="https://www.flickr.com/people/125524007@N08">www.davidmolloyphotography.com</a> from Sydney, Australia
+
+- **Mohammad Nabi** — `mohammad_nabi.jpg`
+  - Source: https://upload.wikimedia.org/wikipedia/commons/4/49/Mohammad_Nabi-Australia.jpg
+  - License: CC BY-SA 3.0 https://creativecommons.org/licenses/by-sa/3.0
+  - Artist/Credit: <a href="//commons.wikimedia.org/wiki/User:K_Popal" title="User:K Popal">K Popal</a>
+
+- **Junaid Siddique** — `junaid_siddique.jpg`
+  - Source: https://upload.wikimedia.org/wikipedia/commons/5/50/Junaid_Siddique_training%2C_23_January%2C_2009%2C_Dhaka_SBNS.jpg
+  - License: CC BY-SA 3.0 https://creativecommons.org/licenses/by-sa/3.0
+  - Artist/Credit: <a href="https://en.wikipedia.org/wiki/User:TawsifSalam" class="extiw" title="wikipedia:User:TawsifSalam">Mohammed Tawsif Salam</a>
+
+- **Naseem Shah** — `naseem_shah.jpg`
+  - Source: https://upload.wikimedia.org/wikipedia/commons/c/c3/Naseem-Shah_%28cropped%29.png
+  - License: CC BY 3.0 https://creativecommons.org/licenses/by/3.0
+  - Artist/Credit: <a href="https://en.wikipedia.org/wiki/BBC_Urdu" class="extiw" title="en:BBC Urdu">BBC Urdu</a>
+
+- **Taskin Ahmed** — `taskin_ahmed.jpg`
+  - Source: https://upload.wikimedia.org/wikipedia/commons/4/43/Taskin_Ahmed_in_2024_%28cropped%29.jpg
+  - License: Public domain 
+  - Artist/Credit: <bdi><a href="https://en.wikipedia.org/wiki/en:Press_Information_Department" class="extiw" title="w:en:Press Information Department"><span title="A department of the Bangladesh government">Press Information Department</span></a>
+</bdi>
+
+- **Shoriful Islam** — `shoriful_islam.jpg`
+  - Source: https://upload.wikimedia.org/wikipedia/commons/8/83/Shoriful_Islam%2C_2024_%28cropped%29.jpg
+  - License: Public domain 
+  - Artist/Credit: <bdi><a href="https://en.wikipedia.org/wiki/en:Press_Information_Department" class="extiw" title="w:en:Press Information Department"><span title="A department of the Bangladesh government">Press Information Department</span></a>
+</bdi>
+

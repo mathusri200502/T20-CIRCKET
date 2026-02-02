@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="category-header">
+  <h2 id="cat-title">Category: {{ category }}</h2>
+  <div id="summary"></div>
+</section>
+
+<section class="table-section">
+  {% if category == 'fast' %}
+  <table id="fast-players-table">
+    <thead>
+      <tr>
+        <th>Name</th><th>Team</th><th>Bowling Style</th><th>Runs Conceded</th><th>Innings Bowled</th><th>Balls Bowled</th><th>Wickets</th><th>Economy</th><th>SR</th><th>Dot Balls</th><th>Maidens</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  {% else %}
+  <table id="players-table">
+    <thead>
+      <tr>
+        <th>Name</th><th>Team</th><th>Batting style</th><th>Innings</th>
+        <th>Runs</th><th>Balls</th><th>SR</th><th>Avg</th><th>Pos</th><th>Boundary %</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  {% endif %}
+</section>
+
+<section class="charts">
+  {% if category == 'fast' %}
+  <canvas id="barWickets" width="520" height="260" style="margin-bottom:24px;"></canvas>
+  <canvas id="areaBowlingAvg" width="400" height="220" style="margin-bottom:24px;"></canvas>
+  <canvas id="areaDotBalls" width="400" height="220" style="margin-bottom:24px;"></canvas>
+  <canvas id="areaEconomy" width="400" height="220" style="margin-bottom:24px;"></canvas>
+  <canvas id="areaBowlingSR" width="400" height="220" style="margin-bottom:24px;"></canvas>
+  <canvas id="scatterSRvsEconomy" height="120"></canvas>
+  {% else %}
+  <canvas id="barRuns" height="120"></canvas>
+  <canvas id="areaAvg" height="120"></canvas>
+  <canvas id="areaSR" height="120"></canvas>
+  <canvas id="areaBF" height="120"></canvas>
+  <canvas id="scatterAvgSR" height="120"></canvas>
+  {% endif %}
+</section>
+
+<script>
+  const CATEGORY = "{{ category }}";
+  // page logic executed in static/js/main.js
+</script>
+{% endblock %}

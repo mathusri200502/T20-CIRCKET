@@ -1,0 +1,56 @@
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.38.109.243:5000
+Press CTRL+C to quit
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 607-745-921
+ * Detected change in 'C:\\Users\\diwaa\\OneDrive\\Desktop\\t20 analytics\\app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 607-745-921
+ * Detected change in 'C:\\Users\\diwaa\\OneDrive\\Desktop\\t20 analytics\\app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 607-745-921
+127.0.0.1 - - [12/Oct/2025 15:10:42] "GET /team/India HTTP/1.1" 200 -
+127.0.0.1 - - [12/Oct/2025 15:14:28] "GET /team/India HTTP/1.1" 200 -
+127.0.0.1 - - [12/Oct/2025 15:14:52] "GET /team/India HTTP/1.1" 200 -
+127.0.0.1 - - [12/Oct/2025 15:14:52] "GET /static/css/styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:53] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [12/Oct/2025 15:14:53] "GET /static/js/main.js HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:53] "GET /static/images/hardik_pandya.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:53] "GET /static/images/suryakumar_yadav.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:53] "GET /static/images/kl_rahul.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:53] "GET /static/images/team-logos/india.svg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:53] "GET /static/images/axar_patel.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:53] "GET /static/images/deepak_hooda.jpg HTTP/1.1" 404 -
+127.0.0.1 - - [12/Oct/2025 15:14:53] "GET /static/images/ravichandran_ashwin.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:53] "GET /static/images/arshdeep_singh.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:53] "GET /static/images/bhuvneshwar_kumar.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:53] "GET /static/images/placeholder.svg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:53] "GET /static/images/dinesh_karthik.jpg HTTP/1.1" 404 -
+127.0.0.1 - - [12/Oct/2025 15:14:53] "GET /static/images/mohammed_shami.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:53] "GET /static/images/rishabh_pant.jpg HTTP/1.1" 404 -
+127.0.0.1 - - [12/Oct/2025 15:14:53] "GET /static/images/rohit_sharma_c.jpg HTTP/1.1" 404 -
+127.0.0.1 - - [12/Oct/2025 15:14:53] "GET /static/images/virat_kohli.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:53] "GET /static/images/team-logos/afghanistan.svg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:54] "GET /static/images/team-logos/australia.svg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:54] "GET /static/images/team-logos/bangladesh.svg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:54] "GET /static/images/team-logos/england.svg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:54] "GET /static/images/team-logos/ireland.svg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:54] "GET /static/images/team-logos/namibia.svg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:54] "GET /static/images/team-logos/netherlands.svg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:54] "GET /static/images/team-logos/new_zealand.svg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:54] "GET /static/images/team-logos/pakistan.svg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:54] "GET /static/images/team-logos/scotland.svg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:54] "GET /static/images/team-logos/south_africa.svg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:54] "GET /static/images/team-logos/u.a.e..svg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:54] "GET /static/images/team-logos/sri_lanka.svg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:54] "GET /static/images/team-logos/west_indies.svg HTTP/1.1" 304 -
+127.0.0.1 - - [12/Oct/2025 15:14:54] "GET /static/images/team-logos/zimbabwe.svg HTTP/1.1" 304 -
+ * Detected change in 'C:\\Users\\diwaa\\OneDrive\\Desktop\\t20 analytics\\scripts\\list_missing_images.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 607-745-921

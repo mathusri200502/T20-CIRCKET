@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="player-details">
+  <div class="player-header">
+    {% set img_name = player.img_name if player.img_name is defined else (player.name.lower().replace(' ', '_').replace('.', '').replace("'", '')) %}
+    {% if '.' in img_name %}
+      <img src="/static/images/{{ img_name }}" alt="{{ player.name }}" class="player-img" onerror="this.src='/static/images/placeholder.svg'" />
+    {% else %}
+      <img src="/static/images/{{ img_name }}.jpg" alt="{{ player.name }}" class="player-img" onerror="this.src='/static/images/placeholder.svg'" />
+    {% endif %}
+    <div class="player-info">
+      <h2>{{ player.name }}</h2>
+      <h4>{{ player.team }}</h4>
+      <div class="player-role">{{ player.playingRole }} | {{ player.battingStyle }} | {{ player.bowlingStyle }}</div>
+    </div>
+  </div>
+  <div class="player-stats">
+    <h3>Scores</h3>
+  <table class="stats-table">
+      <tr><th>Runs</th><th>Balls</th><th>4s</th><th>6s</th><th>Avg</th><th>SR</th><th>Wickets</th><th>Econ</th></tr>
+      <tr>
+        <td>{{ player.runs|default(0) }}</td>
+        <td>{{ player.balls|default(0) }}</td>
+        <td>{{ player['4s']|default(0) }}</td>
+        <td>{{ player['6s']|default(0) }}</td>
+        <td>{{ player.bat_avg|default(0) }}</td>
+        <td>{{ player.strike_rate|default(0) }}</td>
+        <td>{{ player.wickets|default(0) }}</td>
+        <td>{{ player.economy|default(0) }}</td>
+      </tr>
+    </table>
+    <div class="charts" style="display:flex;gap:40px;justify-content:center;align-items:center;flex-wrap:wrap;">
+      <canvas id="runsChart" width="480" height="260" style="background:#f8f8ff;border-radius:22px;box-shadow:0 4px 18px #e4007a22;"></canvas>
+      <canvas id="wicketsChart" width="340" height="260" style="background:#f8f8ff;border-radius:22px;box-shadow:0 4px 18px #5a00b822;"></canvas>
+    </div>
+  </div>
+  <div class="player-history">
+    <h3>Player Biography</h3>
+    <table class="bio-table">
+      <tr><th>Full Name</th><td>{{ player.name }}</td></tr>
+      <tr><th>Country</th><td>{{ player.country or player.team }}</td></tr>
+      <tr><th>Role</th><td>{{ player.role or player.playingRole }}</td></tr>
+      <tr><th>Batting Style</th><td>{{ player.batting_style or player.battingStyle }}</td></tr>
+      <tr><th>Bowling Style</th><td>{{ player.bowling_style or player.bowlingStyle }}</td></tr>
+  <tr><th>Date of Birth</th><td>{{ player.date_of_birth if player.date_of_birth else 'N/A' }}</td></tr>
+    </table>
+    <p>{{ player.biography or wiki_summary or 'No biography available.' }}</p>
+  </div>
+  <div class="player-matches">
+    <h3>Match Records</h3>
+    {% if match_records %}
+      <table class="match-table">
+        <tr>
+          <th>Type</th>
+          <th>Runs</th>
+          <th>Balls</th>
+          <th>4s</th>
+          <th>6s</th>
+          <th>SR</th>
+          <th>Overs</th>
+          <th>Wickets</th>
+          <th>Economy</th>
+          <th>Team</th>
+        </tr>
+        {% for match in match_records %}
+        <tr>
+          <td>{{ match.type|capitalize }}</td>
+          <td>{{ match.runs or '-' }}</td>
+          <td>{{ match.balls or '-' }}</td>
+          <td>{{ match['4s'] if '4s' in match else '-' }}</td>
+          <td>{{ match['6s'] if '6s' in match else '-' }}</td>
+          <td>{{ match.sr if 'sr' in match else '-' }}</td>
+          <td>{{ match.overs if 'overs' in match else '-' }}</td>
+          <td>{{ match.wickets if 'wickets' in match else '-' }}</td>
+          <td>{{ match.economy if 'economy' in match else '-' }}</td>
+          <td>{{ match.team or '-' }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      <p>No match records available.</p>
+    {% endif %}
+  </div>
+</div>
+<script>
+// Unique chart.js usage for player stats
+if (window.Chart) {
+    const battingData = JSON.parse('{{ [player.runs|default(0)|int, player.balls|default(0)|int, player["4s"]|default(0)|int, player["6s"]|default(0)|int] | tojson | safe }}');
+    const bowlingData = JSON.parse('{{ [player.wickets|default(0)|int, player.economy|default(0)|float] | tojson | safe }}');
+
+    // Batting chart: bold color, rounded bars, big font
+    new Chart(document.getElementById('runsChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: ['Runs', 'Balls', '4s', '6s'],
+        datasets: [{
+          label: 'Batting Stats',
+          data: battingData,
+          backgroundColor: ['#e4007a','#00bfae','#ff9100','#5a00b8'],
+          borderRadius: 12,
+          borderSkipped: false,
+          maxBarThickness: 48
+        }]
+      },
+      options: {
+        responsive: false,
+        plugins: {
+          legend: { display: false },
+          title: { display: true, text: 'Batting Summary', color: '#e4007a', font: { size: 18, weight: 'bold' } }
+        },
+        scales: {
+          x: { ticks: { color: '#5a00b8', font: { size: 15, weight: 'bold' } } },
+          y: { beginAtZero: true, ticks: { color: '#888', font: { size: 13 } } }
+        }
+      }
+    });
+
+    // Bowling chart: bold color, rounded bars, big font
+    new Chart(document.getElementById('wicketsChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: ['Wickets', 'Economy'],
+        datasets: [{
+          label: 'Bowling Stats',
+          data: bowlingData,
+          backgroundColor: ['#5a00b8','#00bfae'],
+          borderRadius: 12,
+          borderSkipped: false,
+          maxBarThickness: 48
+        }]
+      },
+      options: {
+        responsive: false,
+        plugins: {
+          legend: { display: false },
+          title: { display: true, text: 'Bowling Summary', color: '#5a00b8', font: { size: 18, weight: 'bold' } }
+        },
+        scales: {
+          x: { ticks: { color: '#e4007a', font: { size: 15, weight: 'bold' } } },
+          y: { beginAtZero: true, ticks: { color: '#888', font: { size: 13 } } }
+        }
+      }
+    });
+}
+</script>
+{% endblock %}

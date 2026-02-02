@@ -1,0 +1,171 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>T20 World Cup 2022 — Analytics</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <script>const API_BASE = '';</script>
+  <style>
+    .charts { padding: 20px; }
+    .charts canvas {
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      margin: 10px 0;
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body class="theme">
+  <header class="topbar">
+    <h1>T20 World Cup 2022 — Analytics</h1>
+    <nav>
+      <a href="/" class="navlink">Home</a>
+      <a href="/category/power" class="navlink">Power Hitters</a>
+      <a href="/category/anchor" class="navlink">Anchors</a>
+      <a href="/category/finisher" class="navlink">Finishers</a>
+      <a href="/category/allrounder" class="navlink">Allrounders</a>
+      <a href="/category/fast" class="navlink">Fast Bowlers</a>
+      <a href="/best11" class="navlink">Best 11</a>
+      <div class="teams-dropdown">
+        <button class="navlink teams-btn">Teams ▾</button>
+        <div class="teams-content" id="teams-menu">
+          <!-- Teams will be populated via JavaScript -->
+        </div>
+      </div>
+        <div class="search-container">
+          <form action="/search" method="GET" style="display: flex; justify-content: flex-end; align-items: center;">
+            <input type="text" name="q" placeholder="Search players, teams, or categories..." class="search-input" id="search-input">
+            <button type="button" id="voice-btn" title="Voice Search" class="mic-btn">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:auto;">
+                <rect x="9" y="2" width="6" height="12" rx="3" fill="#00bfae" stroke="#00bfae"/>
+                <path d="M5 10v2a7 7 0 0 0 14 0v-2" stroke="#ff9100"/>
+                <line x1="12" y1="20" x2="12" y2="22" stroke="#ff9100"/>
+                <line x1="8" y1="22" x2="16" y2="22" stroke="#ff9100"/>
+              </svg>
+            </button>
+            <button type="submit" class="search-button">Search</button>
+          </form>
+          <div id="voice-popup" style="display:none;position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);background:rgba(30,30,40,0.97);color:#fff;padding:2em 2.5em;border-radius:18px;z-index:9999;box-shadow:0 8px 32px #0006;font-size:1.5em;text-align:center;letter-spacing:1px;min-width:300px;max-width:90vw;">
+            <div style="font-size:2.5em;margin-bottom:0.5em;">🎤</div>
+            <div id="voice-popup-text" style="font-family:'Fira Mono',monospace;font-size:1.2em;color:#e4007a;"></div>
+            <div style="margin-top:1em;font-size:0.9em;color:#aaa;">Listening... Speak your search query</div>
+            <button id="voice-popup-close" style="margin-top:1.5em;padding:0.4em 1.2em;font-size:1em;background:#e4007a;color:#fff;border:none;border-radius:8px;cursor:pointer;">Cancel</button>
+          </div>
+          <style>
+            .mic-btn {
+              margin-right: 8px;
+              background: linear-gradient(135deg, #2196f3 60%, #e040fb 100%);
+              border: none;
+              border-radius: 50%;
+              width: 44px;
+              height: 44px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              box-shadow: 0 2px 8px #2196f322;
+              transition: box-shadow 0.2s, background 0.2s;
+              cursor: pointer;
+              outline: none;
+            }
+            .mic-btn:hover, .mic-btn:focus {
+              box-shadow: 0 4px 16px #e040fb55;
+              background: linear-gradient(135deg, #e040fb 60%, #2196f3 100%);
+            }
+            .mic-btn svg {
+              filter: drop-shadow(0 1px 2px #0002);
+            }
+          </style>
+          <script>
+          // Voice search with popup using Web Speech API
+          const voiceBtn = document.getElementById('voice-btn');
+          const searchInput = document.getElementById('search-input');
+          const voicePopup = document.getElementById('voice-popup');
+          const voicePopupText = document.getElementById('voice-popup-text');
+          if (voiceBtn && (window.SpeechRecognition || window.webkitSpeechRecognition)) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
+            voiceBtn.onclick = function(e) {
+              e.preventDefault();
+              voiceBtn.disabled = true;
+              voiceBtn.innerHTML = '<span style="font-size:1.5em;color:#e4007a;">🎤</span>';
+              voicePopup.style.display = 'block';
+              voicePopupText.textContent = '';
+              recognition.start();
+            };
+            document.getElementById('voice-popup-close').onclick = function() {
+              recognition.abort();
+              voiceBtn.disabled = false;
+              voiceBtn.innerHTML = '<span style="font-size:1.5em;">🎤</span>';
+              voicePopup.style.display = 'none';
+            };
+            recognition.onresult = function(event) {
+              let transcript = '';
+              for (let i = event.resultIndex; i < event.results.length; ++i) {
+                transcript += event.results[i][0].transcript;
+              }
+              voicePopupText.textContent = transcript;
+              if (event.results[0].isFinal) {
+                searchInput.value = transcript;
+                voiceBtn.disabled = false;
+                voiceBtn.innerHTML = '<span style="font-size:1.5em;">🎤</span>';
+                voicePopup.style.display = 'none';
+                searchInput.form.submit();
+              }
+            };
+            recognition.onerror = function() {
+              voiceBtn.disabled = false;
+              voiceBtn.innerHTML = '<span style="font-size:1.5em;">🎤</span>';
+              voicePopup.style.display = 'none';
+            };
+            recognition.onend = function() {
+              if (voicePopup.style.display === 'block') {
+                voiceBtn.disabled = false;
+                voiceBtn.innerHTML = '<span style="font-size:1.5em;">🎤</span>';
+                voicePopup.style.display = 'none';
+              }
+            };
+          } else if (voiceBtn) {
+            voiceBtn.style.display = 'none';
+          }
+          </script>
+        </div>
+    </nav>
+    <script>
+      // Populate teams dropdown
+      fetch('/api/teams')
+        .then(r => r.json())
+        .then(teams => {
+          const menu = document.getElementById('teams-menu');
+          teams.forEach(team => {
+            const link = document.createElement('a');
+            link.href = `/team/${encodeURIComponent(team)}`;
+            link.className = 'team-menu-item';
+            const logoPath = `/static/images/team-logos/${team.toLowerCase().replace(/ /g, '_')}.svg`;
+            link.innerHTML = `
+              <img src="${logoPath}" onerror="this.src='/static/images/team-logos/default.svg'" 
+                   alt="${team}" class="team-menu-logo">
+              <span>${team}</span>
+            `;
+            menu.appendChild(link);
+          });
+        });
+    </script>
+  </header>
+
+  <main id="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <div id="player-hover" class="player-hover hidden" style="width:320px;height:160px;aspect-ratio:2/1;box-shadow:0 4px 24px #0002;background:#fff;border-radius:16px;display:flex;flex-direction:row;align-items:center;gap:20px;padding:22px;z-index:9999;position:fixed;">
+    <img id="player-photo" src="/static/images/placeholder.svg" alt="photo" style="width:80px;height:80px;object-fit:cover;border-radius:50%;box-shadow:0 2px 8px #e4007a22;">
+    <div id="player-info" style="flex:1;min-width:0;"></div>
+  </div>
+
+  <script src="/static/js/main.js"></script>
+</body>
+</html>

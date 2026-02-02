@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="team-header">
+  <div class="team-logo">
+    <img src="/static/images/team-logos/{{ team.lower().replace(' ', '_') }}.svg" 
+         onerror="this.src='/static/images/team-logos/default.svg'"
+         alt="{{ team }} logo">
+  </div>
+  <div id="team-summary"></div>
+</section>
+
+<div class="player-grid">
+  {% if team_players is defined %}
+    {% for p in team_players %}
+      {% set img = (p.img_name if p.img_name is defined else p.name.lower().replace(' ', '_').replace('.', '').replace("'", '')) %}
+  <a class="player-card" href="/player/{{ p.name }}" style="text-decoration:none;color:inherit;" data-player-name="{{ p.name }}">
+        {% if '.' in img %}
+          <img src="/static/images/{{ img }}" alt="{{ p.name }}" onerror="this.src='/static/images/placeholder.svg'"/>
+        {% else %}
+          <img src="/static/images/{{ img }}.jpg" alt="{{ p.name }}" onerror="this.src='/static/images/placeholder.svg'"/>
+        {% endif %}
+        <div class="info">
+          <h3 class="team-player-name">{{ p.name }}</h3>
+          <div class="role">{{ p.playingRole }} | {{ p.battingStyle }}</div>
+          <div class="stats">
+            <div class="stat"><div class="value team-score-runs">{{ p.runs or 0 }}</div><div class="label">Runs</div></div>
+            <div class="stat"><div class="value team-score-wkts">{{ p.wickets or 0 }}</div><div class="label">Wkts</div></div>
+            <div class="stat"><div class="value team-score-avg">{{ p.bat_avg or 0 }}</div><div class="label">Avg</div></div>
+            <div class="stat"><div class="value team-score-econ">{{ p.economy or 0 }}</div><div class="label">Econ</div></div>
+          </div>
+</style>
+<style>
+  .team-player-name {
+    color: #ff9100;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    font-size: 1.25em;
+    text-shadow: 0 2px 8px #ff910033;
+    transition: color 0.2s;
+  }
+  .player-card:hover .team-player-name {
+    color: #00bfae;
+  }
+  .team-score-runs {
+    color: #e4007a;
+    font-weight: bold;
+    font-size: 1.1em;
+  }
+  .team-score-wkts {
+    color: #5a00b8;
+    font-weight: bold;
+    font-size: 1.1em;
+  }
+  .team-score-avg {
+    color: #00bfae;
+    font-weight: bold;
+    font-size: 1.1em;
+  }
+  .team-score-econ {
+    color: #ff9100;
+    font-weight: bold;
+    font-size: 1.1em;
+  }
+</style>
+        </div>
+      </a>
+    {% endfor %}
+  {% else %}
+    <!-- Players will be populated here via JavaScript -->
+  {% endif %}
+</div>
+
+<section class="team-stats">
+  <div class="stat-charts">
+  <canvas id="teamRunsChart" width="500" height="240" style="margin-bottom:24px;"></canvas>
+  <canvas id="teamWicketsChart" width="350" height="200" style="margin-bottom:24px;"></canvas>
+  <canvas id="teamAvgChart" width="350" height="200" style="margin-bottom:24px;"></canvas>
+  </div>
+</section>
+
+<!-- Embed team as JSON in a data attribute to keep this file valid JS/HTML before templating -->
+<div id="team-data" data-team='{{ team | tojson | safe }}' style="display:none"></div>
+
+<script>
+  // Read TEAM from the hidden data attribute. This avoids placing Jinja tags directly inside JS code
+  // which causes editor linters to report syntax errors.
+  (function(){
+    var teamNode = document.getElementById('team-data');
+    var TEAM = null;
+    if (teamNode) {
+      try {
+        var raw = teamNode.getAttribute('data-team');
+        TEAM = raw ? JSON.parse(raw) : null;
+      } catch(e) {
+        TEAM = null;
+      }
+    }
+
+    // Only call loadTeamPage if the server didn't render player cards
+    var grid = document.querySelector('.player-grid');
+    var hasServerPlayers = grid && grid.querySelector('.player-card');
+    if (!hasServerPlayers && typeof loadTeamPage === 'function') {
+      document.addEventListener('DOMContentLoaded', function(){ loadTeamPage(); });
+    }
+    // expose TEAM for other scripts
+    window.TEAM = TEAM;
+  })();
+</script>
+{% endblock %}
