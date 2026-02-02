@@ -1,0 +1,15 @@
+*.pyc
+__pycache__/
+.venv/
+venv/
+.git/
+server.err.log
+server.out.log
+node_modules/
+logs/
+data/*.csv
+data/*.bak
+*.log
+*.DS_Store
+/.vscode/
+tests/
