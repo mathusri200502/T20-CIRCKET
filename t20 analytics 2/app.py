@@ -521,8 +521,18 @@ def api_log():
     return ('', 204)
 
 if __name__ == "__main__":
-    print("Starting Flask server...")
+    # Start a development server when executed directly. In production we
+    # recommend using Gunicorn (Procfile / Dockerfile already provided).
+    print("Starting Flask development server...")
     try:
-        app.run(host='127.0.0.1', port=5050, debug=True)
+        port = int(os.environ.get('PORT', 5050))
+        host = os.environ.get('HOST', '0.0.0.0')
+        debug_flag = os.environ.get('FLASK_DEBUG', '0') == '1'
+        app.run(host=host, port=port, debug=debug_flag)
     except Exception as e:
         print(f"Error starting server: {str(e)}")
+
+
+@app.route('/health')
+def health():
+    return jsonify({'status': 'ok'})
